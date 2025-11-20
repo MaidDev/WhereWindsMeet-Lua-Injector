@@ -1,6 +1,7 @@
 -- trace_hook.lua
 -- Trace des appels de fonctions Lua + arguments dans un log,
--- en ignorant les fonctions "classiques" / bruit.
+-- uniquement pour les fichiers dont le chemin contient "buff",
+-- avec CALL + RET et indentation basée sur la profondeur réelle.
 
 local ok, err = pcall(function()
 
@@ -9,7 +10,7 @@ local ok, err = pcall(function()
     return  -- environnement trop bridé
   end
 
-  -- Source de ce fichier (pour ignorer toutes les fonctions déclarées ici)
+  -- Source de ce fichier (pour ignorer les fonctions déclarées ici)
   local THIS_SRC = nil
   do
     local info = dbg.getinfo(1, "S")
@@ -32,7 +33,7 @@ local ok, err = pcall(function()
     f:write(table.concat(parts), "\n")
   end
 
-  write_line("-- Trace des appels de fonctions Lua")
+  write_line("-- Trace des appels de fonctions Lua (filtré sur 'buff')")
   write_line("-- ", os.date("%Y-%m-%d %H:%M:%S"))
   write_line("")
 
@@ -40,20 +41,23 @@ local ok, err = pcall(function()
   -- CONFIG FILTRES
   ---------------------------------------------------------------------------
 
+  -- On ne trace que les fichiers dont le chemin contient ces substrings
+  local TRACE_ONLY_SRC_SUBSTR = {
+    "",
+  }
+
   -- Fichiers / chemins à ignorer (short_src)
   local SKIP_SRC_PREFIXES = {
-    "engine/Lib/",                      -- tes helpers engine
-    "hexm/client/trace.lua",           -- trace/log du client
-    "hexm/client/logger.lua",          -- logger
-    "hexm/common/strict.lua",          -- strict newindex/guard
-    "hexm/common/datetime_manager.lua",-- date/time helpers
-    "hexm/common/data/dir_object.lua", -- DataManager root/index
+    "engine/Lib/",
+    "hexm/client/trace.lua",
+    "hexm/client/logger.lua",
+    "hexm/common/strict.lua",
+    "hexm/common/datetime_manager.lua",
+    "hexm/common/data/dir_object.lua",
     "hexm/common/data/bin_data_object.lua",
     "engine/Lib/partial.lua",
     "hexm/client/entities/local/component/anim.lua",
     "hexm/client/manager/task_queue/",
-    
-
   }
 
   -- Noms de fonctions à ignorer
@@ -70,6 +74,9 @@ local ok, err = pcall(function()
     now           = true,
     now_raw       = true,
   }
+
+  -- On limite le nombre d'arguments loggés
+  local MAX_ARGS = 5
 
   ---------------------------------------------------------------------------
   -- Helpers
@@ -102,8 +109,29 @@ local ok, err = pcall(function()
   -- Pour éviter la récursion dans le hook
   local in_hook = false
 
-  -- Indentation en fonction de la profondeur d'appel
-  local indent = 0
+  -- Calcule l'indentation en fonction de la profondeur réelle de la pile Lua
+  local function get_indent()
+    local depth = 0
+    local level = 3  -- 1 = hook, 2 = fonction hookée, 3+ = appelants
+
+    while true do
+      local info = dbg.getinfo(level, "S")
+      if not info then
+        break
+      end
+      if info.what == "Lua" then
+        depth = depth + 1
+      end
+      level = level + 1
+    end
+
+    -- On enlève 1 pour que le premier niveau ne soit pas déjà indenté
+    if depth > 0 then
+      depth = depth - 1
+    end
+
+    return string_rep("  ", depth)
+  end
 
   -- Teste si on doit ignorer cet appel
   local function should_skip(info)
@@ -111,6 +139,19 @@ local ok, err = pcall(function()
 
     -- Ignorer le fichier du hook lui-même
     if THIS_SRC and src == THIS_SRC then
+      return true
+    end
+
+    -- Ne garder que les fichiers dont le chemin contient "buff" (ou autre substring)
+    local lower_src = src:lower()
+    local ok_path = false
+    for _, sub in ipairs(TRACE_ONLY_SRC_SUBSTR) do
+      if lower_src:find(sub, 1, true) then
+        ok_path = true
+        break
+      end
+    end
+    if not ok_path then
       return true
     end
 
@@ -139,32 +180,22 @@ local ok, err = pcall(function()
       return
     end
 
-    if event == "return" then
-      if indent > 0 then
-        indent = indent - 1
-      end
-      return
-    end
-
-    if event ~= "call" and event ~= "tail call" then
+    -- On ne traite que CALL / TAIL CALL / RETURN
+    if event ~= "call" and event ~= "tail call" and event ~= "return" then
       return
     end
 
     in_hook = true
 
-    local info = dbg.getinfo(2, "nSlu")
-    if not info then
-      in_hook = false
-      return
+    -- Pour RETURN on n'a besoin que de nS (nom + source)
+    local info
+    if event == "return" then
+      info = dbg.getinfo(2, "nS")
+    else
+      info = dbg.getinfo(2, "nSlu")
     end
 
-    if should_skip(info) then
-      in_hook = false
-      return
-    end
-
-    -- On ne trace que les fonctions Lua pour avoir les arguments
-    if info.what ~= "Lua" then
+    if not info or info.what ~= "Lua" or should_skip(info) then
       in_hook = false
       return
     end
@@ -173,19 +204,38 @@ local ok, err = pcall(function()
     local src       = info.short_src or "?"
     local linedef   = info.linedefined or -1
 
-    -- Récupération des arguments
+    local prefix = get_indent()
+
+    if event == "return" then
+      -- On ne peut PAS récupérer les valeurs de retour via sethook.
+      write_line(string_format(
+        "%sRET  %s (%s:%d)",
+        prefix,
+        func_name,
+        src,
+        linedef
+      ))
+      in_hook = false
+      return
+    end
+
+    -- Event = "call" ou "tail call" → on log les arguments
     local args = {}
 
     local nparams = info.nparams or 0
+    if nparams > MAX_ARGS then
+      nparams = MAX_ARGS
+    end
+
     for i = 1, nparams do
       local name, value = dbg.getlocal(2, i)
       if not name then break end
       args[#args+1] = string_format("%s=%s", name, safe_tostring(value))
     end
 
-    if info.isvararg then
+    if info.isvararg and #args < MAX_ARGS then
       local i = 1
-      while true do
+      while #args < MAX_ARGS do
         local name, value = dbg.getlocal(2, -i)
         if not name then
           break
@@ -194,8 +244,6 @@ local ok, err = pcall(function()
         i = i + 1
       end
     end
-
-    local prefix = string_rep("  ", indent)
 
     write_line(string_format(
       "%sCALL %s (%s:%d)  args: (%s)",
@@ -206,7 +254,6 @@ local ok, err = pcall(function()
       table.concat(args, ", ")
     ))
 
-    indent = indent + 1
     in_hook = false
   end
 
