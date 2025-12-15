@@ -61,8 +61,9 @@ function scan(sig, name) {
   return addr;
 }
 
+/* ========= UPDATED SIG ========= */
 const SIG_LUA_LOAD =
-  "48 89 5C 24 10 56 48 83 EC 50 49 8B D9 48 8B F1 4D 8B C8 4C 8B C2 48 8D 54 24 20";
+  "48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57 48 83 EC 50 48 8B E9 49 8B F1";
 
 const SIG_LUA_PCALL =
   "48 89 74 24 18 57 48 83 EC 40 33 F6 48 89 6C 24 58 49 63 C1 41 8B E8 48 8B F9 45 85 C9";
