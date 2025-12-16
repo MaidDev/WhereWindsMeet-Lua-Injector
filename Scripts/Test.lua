@@ -1,14 +1,13 @@
--- UI Source from Caslex from UC Updated by MAID
 -- SCRIPT START TEST
 print("=== SCRIPT IS RUNNING ===")
 print("If you see this, the script is loading...")
-
+ 
 -- === Debug Logging System ===
-
+ 
 -- master switch: set to false to completely stop writing script_debug.txt
 local DEBUG_FILE_ENABLED = false
 local DEBUG_FILE_PATH    = "C:\\temp\\Where Winds Meet\\Scripts\\script_debug.txt"
-
+ 
 local function write_debug(message)
     -- Write to file only if enabled
     if DEBUG_FILE_ENABLED then
@@ -28,17 +27,17 @@ local function write_debug(message)
             print("Debug file open error: " .. tostring(file))
         end
     end
-
+ 
     -- Always print to console as fallback
     print(message)
 end
-
+ 
 -- Optionally create/clear debug file at start
 if DEBUG_FILE_ENABLED then
     local init_success, init_file = pcall(function()
         return io.open(DEBUG_FILE_PATH, "w")
     end)
-
+ 
     if init_success and init_file then
         local write_success = pcall(function()
             init_file:write("=== SCRIPT DEBUG LOG ===\n")
@@ -54,7 +53,7 @@ if DEBUG_FILE_ENABLED then
 else
     print("Debug file logging disabled (DEBUG_FILE_ENABLED = false)")
 end
-
+ 
 print("=== SCRIPT DEBUG LOG ===")
 print("Script started successfully")
 -- === Environment Check ===
@@ -65,26 +64,26 @@ write_debug("cc exists: " .. tostring(cc ~= nil))
 write_debug("cc.Director exists: " .. tostring(cc and cc.Director ~= nil))
 write_debug("Director instance: " .. tostring(cc and cc.Director:getInstance() ~= nil))
 write_debug("Running scene: " .. tostring(cc and cc.Director:getInstance() and cc.Director:getInstance():getRunningScene() ~= nil))
-
+ 
 if not cc or not cc.Director then
     write_debug("ERROR: Cocos2d-x not available")
     return
 end
-
+ 
 local director = cc.Director:getInstance()
 if not director then
     write_debug("ERROR: Director not available")
     return
 end
-
+ 
 local scene = director:getRunningScene()
 if not scene then
     write_debug("ERROR: No running scene found!")
     return
 end
-
+ 
 write_debug("Scene valid for UI creation")
-
+ 
 -- === Debug Flags Integration ===
 local FLAGS_TO_SET = {
   DEBUG                   = false,
@@ -189,7 +188,7 @@ end
  
 -- Invisibility (using buff system)
 _G.GM_INVISIBLE = _G.GM_INVISIBLE or false
-
+ 
 local function toggle_invisible()
     local mp = G.main_player
     if not mp then
@@ -238,7 +237,7 @@ panel:setBackGroundColorType(1)
 panel:setBackGroundColor(cc.c3b(25, 25, 40))  -- Lighter blue tint for better visibility
 panel:setBackGroundColorOpacity(220)  -- Slightly more transparent
 panel:setClippingEnabled(true)
-
+ 
 -- Add border for better visibility
 panel:setBackGroundColorType(1)
 panel:setBackGroundColor(cc.c3b(25, 25, 40))
@@ -262,7 +261,7 @@ titleText:setTextColor(cc.c3b(255, 255, 255))
 titleText:setPosition(cc.p(panelWidth/2, 30))
 titleBar:addChild(titleText)
 write_debug("Title text created")
-
+ 
 -- Subtitle text with better color
 local subtitleText = ccui.Text:create("Made with ❤️ by MAID", "Arial", 18)
 subtitleText:setTextColor(cc.c3b(180, 180, 255))  -- Light blue tint
@@ -297,7 +296,7 @@ local function keepPanelInBounds(newX, newY)
     
     return newX, newY
 end
-
+ 
 -- Make entire panel draggable with smart boundaries
 panel:setTouchEnabled(true)
 panel:addTouchEventListener(function(sender, eventType)
@@ -307,7 +306,7 @@ panel:addTouchEventListener(function(sender, eventType)
         dragOffset = cc.p(touchPos.x - panelPos.x, touchPos.y - panelPos.y)
         isDragging = true
         return true -- consume event
-
+ 
     elseif eventType == 1 and isDragging then -- ccui.TouchEventType.moved
         local touchPos = sender:getTouchMovePosition()
         local newX = touchPos.x - dragOffset.x
@@ -317,7 +316,7 @@ panel:addTouchEventListener(function(sender, eventType)
         newX, newY = keepPanelInBounds(newX, newY)
         panel:setPosition(cc.p(newX, newY))
         return true -- consume event
-
+ 
     elseif eventType == 2 or eventType == 3 then -- ccui.TouchEventType.ended or ccui.TouchEventType.canceled
         isDragging = false
         
@@ -343,7 +342,7 @@ titleBar:addTouchEventListener(function(sender, eventType)
         local panelPos = panel:getPosition()
         dragOffset = cc.p(touchPos.x - panelPos.x, touchPos.y - panelPos.y)
         isDragging = true
-
+ 
     elseif eventType == 1 and isDragging then -- ccui.TouchEventType.moved
         local touchPos = sender:getTouchMovePosition()
         local newX = touchPos.x - dragOffset.x
@@ -352,7 +351,7 @@ titleBar:addTouchEventListener(function(sender, eventType)
         -- Apply smart boundaries for title bar dragging too
         newX, newY = keepPanelInBounds(newX, newY)
         panel:setPosition(cc.p(newX, newY))
-
+ 
     elseif eventType == 2 or eventType == 3 then -- ccui.TouchEventType.ended or ccui.TouchEventType.canceled
         isDragging = false
         
@@ -465,7 +464,7 @@ local function makeButton(label, x, y, width, height)
     if not success then
         write_debug("[makeButton] ERROR: Failed to set position for: " .. label)
     end
-
+ 
     -- Enhanced button styling with contrasting colors (not blue)
     local normalColor = cc.c3b(80, 120, 80)      -- Green color to contrast with blue background
     local hoverColor  = cc.c3b(100, 140, 100)    -- Lighter green
@@ -477,7 +476,7 @@ local function makeButton(label, x, y, width, height)
     if not success then
         write_debug("[makeButton] ERROR: Failed to set color for: " .. label)
     end
-
+ 
     -- Try to set background color with high contrast
     success = pcall(function()
         b:setBackGroundColorType(1)
@@ -491,7 +490,7 @@ local function makeButton(label, x, y, width, height)
     -- Note: setBackGroundColorType, setBackGroundColor, setBackGroundColorOpacity
     -- are not supported in this Cocos2d-x version
     write_debug("[makeButton] Using setColor instead of background methods for: " .. label)
-
+ 
     success = pcall(function()
         b:addTouchEventListener(function(sender, eventType)
             if eventType == ccui.TouchEventType.began then
@@ -509,7 +508,7 @@ local function makeButton(label, x, y, width, height)
     if not success then
         write_debug("[makeButton] ERROR: Failed to add touch listener for: " .. label)
     end
-
+ 
     success = pcall(function()
         panel:addChild(b)
         -- Ensure buttons are on top of background
@@ -1034,7 +1033,7 @@ end
  
 write_debug("Button creation functions set up")
 write_debug("Starting button creation...")
-
+ 
 -- Teleport Random button
 btn_cycle_room = row("Teleport Random", function()
     cycle_gm_room()
@@ -1070,7 +1069,7 @@ local btn_onehitkill = row("One-Hit Kill: " .. (_G.GM_ONEHITKILL and "ON" or "OF
     b:setTitleText("One-Hit Kill: " .. (currentState and "ON" or "OFF"))
     b:setTitleColor(currentState and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
 end)
-
+ 
 -- Initialize color correctly at startup
 btn_onehitkill:setTitleColor(_G.GM_ONEHITKILL and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
  
@@ -1466,20 +1465,20 @@ end
 -- RECOVERY button (Using Action and Buff)
 local btn_recovery = row("Recovery", function()
     write_debug("[Recover] Recovering player...")
-
+ 
     local function recover_player()
         local mp = G.main_player
         if not mp then
             write_debug("[Recover] ERROR: Main player not found for recovery")
             return false
         end
-
+ 
         local success = false
         -- Try using the combat action module
         local mod = "hexm.client.ui.windows.gm.gm_combat.combat_train_action"
         local action = nil
         pcall(function() action = portable.import(mod) end)
-
+ 
         if action then
             pcall(function() action.recover_hp(1) end) -- Recover HP
             pcall(function() action.fullfill_all_combat_res(1) end) -- Full fill stamina
@@ -1491,16 +1490,16 @@ local btn_recovery = row("Recovery", function()
             write_debug("[Recover] [✔] Recovery buff applied as fallback")
             success = true
         end
-
+ 
         return success
     end
-
+ 
     -- Execute recovery when button clicked
     recover_player()
 end)
-
+ 
 btn_recovery:setTitleColor(cc.c3b(0, 255, 0))
-
+ 
  
  
  
@@ -1510,14 +1509,14 @@ btn_recovery:setTitleColor(cc.c3b(0, 255, 0))
 write_debug("[DEBUG] Reached point after Recovery button creation")
 write_debug("[DEBUG] Total buttons created: " .. #buttons)
 write_debug("[DEBUG] About to create minimize button...")
-
+ 
 -- MINIMIZE BUTTON with enhanced styling
 write_debug("[DEBUG] Starting minimize button creation...")
 local btn_minimize_success, btn_minimize = pcall(function()
     return ccui.Button:create()
 end)
 write_debug("[DEBUG] Minimize button creation: " .. tostring(btn_minimize_success))
-
+ 
 if btn_minimize_success and btn_minimize then
     write_debug("[DEBUG] Setting minimize button properties...")
     pcall(function() btn_minimize:setTitleText("−") end)  -- Better minus symbol
@@ -1525,15 +1524,15 @@ if btn_minimize_success and btn_minimize then
     pcall(function() btn_minimize:setTitleColor(cc.c3b(255, 255, 120)) end)  -- Brighter yellow
     pcall(function() btn_minimize:setScale9Enabled(true) end)
     pcall(function() btn_minimize:setContentSize(cc.size(35, 35)) end)
-
+ 
     -- Enhanced button styling
     pcall(function() btn_minimize:setBackGroundColorType(1) end)
     pcall(function() btn_minimize:setBackGroundColor(cc.c3b(60, 60, 80)) end)  -- Dark blue background
     pcall(function() btn_minimize:setBackGroundColorOpacity(200) end)
-
+ 
     -- Position at top-right of title bar (left of close button)
     pcall(function() btn_minimize:setPosition(cc.p(panelWidth - 65, titleBar:getContentSize().height / 2)) end)
-
+ 
     -- Ensure minimize button stays on top
     pcall(function() btn_minimize:setLocalZOrder(1000) end)
     write_debug("[DEBUG] Minimize button properties set successfully")
@@ -1720,7 +1719,7 @@ local btn_close_success, btn_close = pcall(function()
     return ccui.Button:create()
 end)
 write_debug("[DEBUG] Close button creation: " .. tostring(btn_close_success))
-
+ 
 if btn_close_success and btn_close then
     write_debug("[DEBUG] Setting close button properties...")
     pcall(function() btn_close:setTitleText("X") end)
@@ -1728,10 +1727,10 @@ if btn_close_success and btn_close then
     pcall(function() btn_close:setTitleColor(cc.c3b(255, 80, 80)) end)
     pcall(function() btn_close:setScale9Enabled(true) end)
     pcall(function() btn_close:setContentSize(cc.size(50, 50)) end)
-
+ 
     -- Position at top-right of title bar
     pcall(function() btn_close:setPosition(cc.p(panelWidth - 25, titleBar:getContentSize().height / 2)) end)
-
+ 
     -- Ensure close button stays on top
     pcall(function() btn_close:setLocalZOrder(1001) end)
     write_debug("[DEBUG] Close button properties set successfully")
@@ -1759,33 +1758,33 @@ if btn_close_success and btn_close then
 else
     write_debug("[ERROR] Cannot add close button - creation failed")
 end
-
+ 
 -- Enhanced keybind info button for minimized state
 write_debug("[DEBUG] Starting keybind info button creation...")
 keybindInfo = ccui.Button:create()
 write_debug("[DEBUG] Keybind info button created directly")
-
+ 
 write_debug("[DEBUG] Setting keybind info button properties...")
-pcall(function() keybindInfo:setTitleText("📋 Click to open menu or drag to move") end)
+pcall(function() keybindInfo:setTitleText("   Click to open menu or drag to move") end)
 pcall(function() keybindInfo:setTitleFontSize(25) end)
 pcall(function() keybindInfo:setTitleColor(cc.c3b(200, 200, 255)) end)  -- Light blue color
 pcall(function() keybindInfo:setScale9Enabled(true) end)
 pcall(function() keybindInfo:setContentSize(cc.size(320, 35)) end)
 pcall(function() keybindInfo:setPosition(cc.p(panelWidth/2, 25)) end)
 pcall(function() keybindInfo:setLocalZOrder(999) end)
-
+ 
 -- Style the minimized button better
 pcall(function() keybindInfo:setBackGroundColorType(1) end)
 pcall(function() keybindInfo:setBackGroundColor(cc.c3b(30, 30, 50)) end)  -- Dark blue background
 pcall(function() keybindInfo:setBackGroundColorOpacity(200) end)
-
+ 
 local add_success = pcall(function()
     panel:addChild(keybindInfo)
 end)
 write_debug("[DEBUG] Keybind info button added to panel: " .. tostring(add_success))
 write_debug("[DEBUG] Enhanced keybind info button created with better styling")
 write_debug("[DEBUG] keybindInfo stored in global scope: " .. tostring(keybindInfo ~= nil))
-
+ 
 write_debug("[DEBUG] About to write final completion messages...")
 write_debug("Menu creation result: true")
 write_debug("=== INITIALIZATION COMPLETE ===")
@@ -1794,13 +1793,13 @@ write_debug("[DEBUG] Script reached the very end - all sections completed")
 write_debug("[DEBUG] Final check - keybindInfo exists: " .. tostring(keybindInfo ~= nil))
 write_debug("[DEBUG] Final check - btn_minimize exists: " .. tostring(btn_minimize ~= nil))
 write_debug("[DEBUG] Final check - btn_close exists: " .. tostring(btn_close ~= nil))
-
+ 
 -- Final success message to debug file (DEBUG_FILE_ENABLED)
 if DEBUG_FILE_ENABLED then
     local final_success, final_file = pcall(function()
         return io.open(DEBUG_FILE_PATH, "a")
     end)
-
+ 
     if final_success and final_file then
         local final_write_success = pcall(function()
             final_file:write(os.date("%H:%M:%S") .. " === SCRIPT COMPLETED SUCCESSFULLY ===\n")
