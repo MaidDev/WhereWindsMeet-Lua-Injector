@@ -216,9 +216,6 @@ local function toggle_invisible()
     end
 end
  
--- Diving Air (REMOVED - not working)
--- This feature has been removed as requested
- 
 write_debug("Creating menu...")
 -- Panel dimensions
 local panelWidth, panelHeight = 480, 2000   -- base minimum height
@@ -263,7 +260,7 @@ titleBar:addChild(titleText)
 write_debug("Title text created")
  
 -- Subtitle text with better color
-local subtitleText = ccui.Text:create("Made with ❤️ by MAID", "Arial", 18)
+local subtitleText = ccui.Text:create("Made By Maid . Unknowncheats", "Arial", 18)
 subtitleText:setTextColor(cc.c3b(180, 180, 255))  -- Light blue tint
 subtitleText:setPosition(cc.p(panelWidth/2, 10))
 titleBar:addChild(subtitleText)
@@ -565,9 +562,6 @@ local function toggle_god()
         return true
     end
 end
- 
--- One-Hit Exhaust (REMOVED)
--- This feature has been removed as requested
  
 -- One-Hit Kill (using action system)
 _G.GM_ONEHITKILL = _G.GM_ONEHITKILL or false
@@ -930,47 +924,101 @@ local function toggle_fov()
 end
  
  
--- Speed Hack (using working method from Speed.lua)
-_G.SPEED_ENABLED = _G.SPEED_ENABLED or false
+-- Speed Hack (Dialog Speed)
+_G.DIALOG_SPEED_ENABLED = _G.DIALOG_SPEED_ENABLED or false
  
 local function toggle_speed()
-    write_debug("[Speed] Toggling speed hack...")
-    local SPEED_MULTIPLIER = 3.0
-    local NORMAL_SPEED = 1.0
+    write_debug("[Speed] Toggling dialog speed hack...")
+    local SPEED_MULTIPLIER = 20.0
+    local NORMAL_SPEED = 3.0
     
-    _G.SPEED_ENABLED = not _G.SPEED_ENABLED
-    
-    if _G.SPEED_ENABLED then
-        -- Enable speed
-        if G and G.main_player then
-            local mp = G.main_player
-            if mp.set_move_speed_scale then
-                pcall(mp.set_move_speed_scale, mp, SPEED_MULTIPLIER)
-                write_debug("[Speed] [✔] Speed enabled (x" .. SPEED_MULTIPLIER .. ")")
-                return true
-            else
-                write_debug("[Speed] ERROR: set_move_speed_scale method not found")
-            end
-        else
-            write_debug("[Speed] ERROR: G.main_player not available")
+    if _G.DIALOG_SPEED_ENABLED then
+        -- Disable speedup (reset to normal)
+        local speed = NORMAL_SPEED
+        if G and G.dialog_global_time_scale ~= nil then
+            G.dialog_global_time_scale = speed
         end
+        if G and G.space then
+            local space = G.space
+            if space.dialog_global_time_scale ~= nil then
+                space.dialog_global_time_scale = speed
+            end
+            if space.dialog_set_global_time_scale then
+                pcall(space.dialog_set_global_time_scale, space, speed)
+            end
+            if space.imp_dialogs_manager then
+                local dm = space.imp_dialogs_manager
+                if dm.dialog_set_global_time_scale then
+                    pcall(dm.dialog_set_global_time_scale, dm, speed)
+                end
+            end
+        end
+        local mp = G.main_player
+        if mp and mp.dialog_set_time_speed_scale then
+            pcall(mp.dialog_set_time_speed_scale, mp, true, speed)
+        end
+        local gm_decorator = package.loaded["hexm.client.debug.gm.gm_decorator"]
+        if not gm_decorator then
+            local success, decorator = pcall(require, "hexm.client.debug.gm.gm_decorator")
+            if success then
+                gm_decorator = decorator
+            else
+                write_debug("[Speed] WARNING: gm_decorator module not found, skipping dialog_hl")
+            end
+        end
+        if gm_decorator and gm_decorator.gm_command_short_cuts and gm_decorator.gm_command_short_cuts.game then
+            local cmds = gm_decorator.gm_command_short_cuts.game
+            if cmds["$dialog_hl"] then
+                pcall(cmds["$dialog_hl"], speed)
+            end
+        end
+        _G.DIALOG_SPEED_ENABLED = false
+        write_debug("[Speed] [✔] Dialog speed reset to normal")
+        return false
     else
-        -- Disable speed
-        if G and G.main_player then
-            local mp = G.main_player
-            if mp.set_move_speed_scale then
-                pcall(mp.set_move_speed_scale, mp, NORMAL_SPEED)
-                write_debug("[Speed] [✔] Speed disabled")
-                return true
-            else
-                write_debug("[Speed] ERROR: set_move_speed_scale method not found")
-            end
-        else
-            write_debug("[Speed] ERROR: G.main_player not available")
+        -- Enable speedup (x20)
+        local speed = SPEED_MULTIPLIER
+        if G and G.dialog_global_time_scale ~= nil then
+            G.dialog_global_time_scale = speed
         end
+        if G and G.space then
+            local space = G.space
+            if space.dialog_global_time_scale ~= nil then
+                space.dialog_global_time_scale = speed
+            end
+            if space.dialog_set_global_time_scale then
+                pcall(space.dialog_set_global_time_scale, space, speed)
+            end
+            if space.imp_dialogs_manager then
+                local dm = space.imp_dialogs_manager
+                if dm.dialog_set_global_time_scale then
+                    pcall(dm.dialog_set_global_time_scale, dm, speed)
+                end
+            end
+        end
+        local mp = G.main_player
+        if mp and mp.dialog_set_time_speed_scale then
+            pcall(mp.dialog_set_time_speed_scale, mp, false, speed)
+        end
+        local gm_decorator = package.loaded["hexm.client.debug.gm.gm_decorator"]
+        if not gm_decorator then
+            local success, decorator = pcall(require, "hexm.client.debug.gm.gm_decorator")
+            if success then
+                gm_decorator = decorator
+            else
+                write_debug("[Speed] WARNING: gm_decorator module not found, skipping dialog_hl")
+            end
+        end
+        if gm_decorator and gm_decorator.gm_command_short_cuts and gm_decorator.gm_command_short_cuts.game then
+            local cmds = gm_decorator.gm_command_short_cuts.game
+            if cmds["$dialog_hl"] then
+                pcall(cmds["$dialog_hl"], speed)
+            end
+        end
+        _G.DIALOG_SPEED_ENABLED = true
+        write_debug("[Speed] [✔] Dialog speed set to x20")
+        return true
     end
-    
-    return false
 end
  
 -- Map Cycle
@@ -1058,9 +1106,6 @@ end)
 -- Initialize color correctly at startup
 btn_god:setTitleColor(_G.GM_GODMODE and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
  
--- One-Hit Exhaust (REMOVED)
--- This button has been removed as requested
- 
 -- ohk
 local btn_onehitkill = row("One-Hit Kill: " .. (_G.GM_ONEHITKILL and "ON" or "OFF"), function(b)
     toggle_one_hit_kill() -- Just toggle, don't rely on return value
@@ -1106,10 +1151,6 @@ end)
 -- Initialize color correctly
 btn_invisible:setTitleColor(_G.GM_INVISIBLE and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
  
--- Diving Air (REMOVED)
--- This button has been removed as requested
- 
- 
 -- NPC DUMB
 local btn_npcai = row("NPC DUMB: " .. (_G.GM_NPCDUMB and "ON" or "OFF"), function(b)
     local state = toggle_npc_dumb()
@@ -1120,15 +1161,15 @@ end)
 -- Initialize color correctly at startup
 btn_npcai:setTitleColor(_G.GM_NPCDUMB and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
  
--- Speed Hack Button
-local btn_speedup = row("Speed Hack: " .. (_G.SPEED_ENABLED and "ON (x3)" or "OFF"), function(b)
+-- Speed Hack Button (Dialog Speed)
+local btn_speedup = row("Speed Hack: " .. (_G.DIALOG_SPEED_ENABLED and "ON (x20)" or "OFF"), function(b)
     local state = toggle_speed()
-    b:setTitleText("Speed Hack: " .. (state and "ON (x3)" or "OFF"))
+    b:setTitleText("Dialog Speed: " .. (state and "ON (x20)" or "OFF"))
     b:setTitleColor(state and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
 end)
  
 -- Initialize color correctly at startup
-btn_speedup:setTitleColor(_G.SPEED_ENABLED and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
+btn_speedup:setTitleColor(_G.DIALOG_SPEED_ENABLED and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
  
  
 -- reset crime
@@ -1185,7 +1226,7 @@ btn_fov = row("Cycle FOV (" .. FOV_VALUES[_G.GM_FOV_INDEX] .. ")", function()
 end)
 btn_fov:setTitleColor(cc.c3b(255, 255, 255))
  
--- Auto Loot button (WORKING METHOD from 00AutoLoot.lua)
+-- Auto Loot button (WORKING METHOD from AutoLoot.lua)
 local btn_autoloot = row("Auto Loot", function()
     write_debug("[AutoLoot] Triggering AutoLoot...")
     local mp = G.main_player
@@ -1197,11 +1238,11 @@ local btn_autoloot = row("Auto Loot", function()
     local interact_misc = portable.import('hexm.common.misc.interact_misc')
     
     -- Method 1: Collect nearby collections
-    pcall(function() mp:ride_skill_collect_nearby_collections(1500) end)
+    pcall(function() mp:ride_skill_collect_nearby_collections(5000) end)
     
     -- Method 2: Find and collect kill rewards
     pcall(function()
-        local rewards = mp:ride_skill_find_nearest_kill_reward(1500)
+        local rewards = mp:ride_skill_find_nearest_kill_reward(5000)
         if rewards then
             mp:ride_skill_get_kill_reward(rewards)
         end
@@ -1209,7 +1250,7 @@ local btn_autoloot = row("Auto Loot", function()
     
     -- Method 3: Pick up nearby drops
     pcall(function()
-        local drops = DropManager.get_nearby_drop_entities(1500)
+        local drops = DropManager.get_nearby_drop_entities(5000)
         if drops then
             for _, eid in ipairs(drops) do
                 pcall(function() mp:pick_drop_item(eid) end)
@@ -1311,154 +1352,194 @@ btn_autoloot:setTitleColor(cc.c3b(255, 255, 255))
  
 -- Auto Loot Loop button
 _G.AUTO_COLLECT_ENABLED = _G.AUTO_COLLECT_ENABLED or false
-local auto_collect_timer = nil
+local auto_collect_action = nil
+local toggle_auto_collect_loop
  
-local btn_autolootloop = row("Auto Loot Loop: " .. (_G.AUTO_COLLECT_ENABLED and "ON" or "OFF"), function(b)
-    local state = toggle_auto_collect_loop()
-    b:setTitleText("Auto Loot Loop: " .. (state and "ON" or "OFF"))
-    b:setTitleColor(state and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
+local btn_autolootloop = row("Auto Loot Loop: OFF", function()
+    toggle_auto_collect_loop()
 end)
  
--- Initialize color correctly at startup
-btn_autolootloop:setTitleColor(_G.AUTO_COLLECT_ENABLED and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0))
+btn_autolootloop:setTitleColor(
+    _G.AUTO_COLLECT_ENABLED and cc.c3b(0, 255, 0) or cc.c3b(255, 0, 0)
+)
  
-local function toggle_auto_collect_loop()
+toggle_auto_collect_loop = function()
     write_debug("[AutoLootLoop] Toggling auto collect loop...")
     _G.AUTO_COLLECT_ENABLED = not _G.AUTO_COLLECT_ENABLED
-    
+ 
     if _G.AUTO_COLLECT_ENABLED then
-        -- Start auto collect loop
-        if auto_collect_timer then
-            cc.Director:getInstance():getScheduler():unscheduleScriptEntry(auto_collect_timer)
-        end
-        
-        auto_collect_timer = cc.Director:getInstance():getScheduler():scheduleScriptFunc(function()
-            local mp = G.main_player
-            if not mp then
-                write_debug("[AutoLootLoop] ERROR: Main player not found for AutoLoot")
-                return
-            end
-            
-            local interact_misc = portable.import('hexm.common.misc.interact_misc')
-            
-            -- Method 1: Collect nearby collections
-            pcall(function() mp:ride_skill_collect_nearby_collections(1500) end)
-            
-            -- Method 2: Find and collect kill rewards
-            pcall(function()
-                local rewards = mp:ride_skill_find_nearest_kill_reward(1500)
-                if rewards then
-                    mp:ride_skill_get_kill_reward(rewards)
-                end
-            end)
-            
-            -- Method 3: Pick up nearby drops
-            pcall(function()
-                local drops = DropManager.get_nearby_drop_entities(1500)
-                if drops then
-                    for _, eid in ipairs(drops) do
-                        pcall(function() mp:pick_drop_item(eid) end)
-                        pcall(function() mp:pick_reward_item(eid) end)
-                    end
-                end
-            end)
-            
-            -- Method 4: Advanced InteractComEntity system
-            local playerPos = mp:get_position()
-            local entities = MEntityManager:GetAOIEntities()
-            local targets = {}
-            
-            for i = 1, #entities do
-                local ent = entities[i]
-                local ok, name = pcall(function() return ent:GetName() end)
-                if ok and name and name:find('InteractComEntity') then
-                    local ok2, eno = pcall(function() return ent:GetEntityNo() end)
-                    local ok3, eid = pcall(function() return ent.entity_id end)
-                    if ok2 and ok3 then
-                        local luaEnt = G.space:get_entity(eid)
-                        if luaEnt then
-                            local ok4, comp = pcall(function() return luaEnt:get_interact_comp(eid) end)
-                            if ok4 and comp and comp.position then
-                                local dx = playerPos.x - comp.position[1]
-                                local dy = playerPos.y - comp.position[2]
-                                local dz = playerPos.z - comp.position[3]
-                                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-                                
-                                local priority = eid:find('ins_entity') and 0 or 1
-                                table.insert(targets, {
-                                    entity_no = eno,
-                                    entity_id = eid,
-                                    luaEnt = luaEnt,
-                                    comp = comp,
-                                    distance = dist,
-                                    priority = priority
-                                })
+        btn_autolootloop:setTitleText("Auto Loot Loop: ON")
+        btn_autolootloop:setTitleColor(cc.c3b(0, 255, 0))
+ 
+        if not auto_collect_action then
+            local scene = cc.Director:getInstance():getRunningScene()
+            if scene then
+                auto_collect_action = cc.RepeatForever:create(
+                    cc.Sequence:create({
+                        cc.DelayTime:create(5.0),
+                        cc.CallFunc:create(function()
+                            if not _G.AUTO_COLLECT_ENABLED then
+                                return
                             end
-                        end
-                    end
-                end
-            end
-            
-            table.sort(targets, function(a, b)
-                if a.priority ~= b.priority then return a.priority < b.priority end
-                return a.distance < b.distance
-            end)
-            
-            for i = 1, #targets do
-                local t = targets[i]
-                local ways = {}
-                local seen = {}
-                
-                local ok_ways, possible = pcall(function()
-                    return interact_misc.get_all_possible_active_ways(t.entity_no)
-                end)
-                
-                if ok_ways and possible then
-                    for _, w in ipairs(possible) do
-                        if not seen[w] then seen[w] = true; table.insert(ways, w) end
-                    end
-                end
-                
-                local comp_id = nil
-                if t.comp.components then
-                    for cid, comp_data in pairs(t.comp.components) do
-                        comp_id = cid
-                        
-                        if comp_data.status_no and not seen[comp_data.status_no] then
-                            seen[comp_data.status_no] = true
-                            table.insert(ways, comp_data.status_no)
-                        end
-                        
-                        if comp_data.config_no and not seen[comp_data.config_no] then
-                            seen[comp_data.config_no] = true
-                            table.insert(ways, comp_data.config_no)
-                        end
-                    end
-                end
-                
-                if #ways > 0 then
-                    pcall(function() mp:set_interact_target_id(t.entity_id) end)
-                    
-                    for _, way in ipairs(ways) do
-                        pcall(function()
-                            mp:trigger_active_interact(way, t.entity_id, nil, nil, comp_id)
+ 
+                            local mp = G.main_player
+                            if not mp then
+                                write_debug("[AutoLootLoop] ERROR: Main player not found for AutoLoot")
+                                return
+                            end
+ 
+                            local interact_misc = portable.import('hexm.common.misc.interact_misc')
+ 
+                            -- Method 1: Collect nearby collections
+                            pcall(function()
+                                mp:ride_skill_collect_nearby_collections(10000)
+                            end)
+ 
+                            -- Method 2: Find and collect kill rewards
+                            pcall(function()
+                                local rewards = mp:ride_skill_find_nearest_kill_reward(10000)
+                                if rewards then
+                                    mp:ride_skill_get_kill_reward(rewards)
+                                end
+                            end)
+ 
+                            -- Method 3: Pick up nearby drops
+                            pcall(function()
+                                local drops = DropManager.get_nearby_drop_entities(10000)
+                                if drops then
+                                    for _, eid in ipairs(drops) do
+                                        pcall(function() mp:pick_drop_item(eid) end)
+                                        pcall(function() mp:pick_reward_item(eid) end)
+                                    end
+                                end
+                            end)
+ 
+                            -- Method 4: Advanced InteractComEntity system
+                            local playerPos = mp:get_position()
+                            local entities = MEntityManager:GetAOIEntities()
+                            local targets = {}
+ 
+                            for i = 1, #entities do
+                                local ent = entities[i]
+                                local ok, name = pcall(function()
+                                    return ent:GetName()
+                                end)
+ 
+                                if ok and name and name:find("InteractComEntity") then
+                                    local ok2, eno = pcall(function()
+                                        return ent:GetEntityNo()
+                                    end)
+                                    local ok3, eid = pcall(function()
+                                        return ent.entity_id
+                                    end)
+ 
+                                    if ok2 and ok3 then
+                                        local luaEnt = G.space:get_entity(eid)
+                                        if luaEnt then
+                                            local ok4, comp = pcall(function()
+                                                return luaEnt:get_interact_comp(eid)
+                                            end)
+ 
+                                            if ok4 and comp and comp.position then
+                                                local dx = playerPos.x - comp.position[1]
+                                                local dy = playerPos.y - comp.position[2]
+                                                local dz = playerPos.z - comp.position[3]
+                                                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+ 
+                                                local priority = eid:find("ins_entity") and 0 or 1
+ 
+                                                table.insert(targets, {
+                                                    entity_no = eno,
+                                                    entity_id = eid,
+                                                    luaEnt = luaEnt,
+                                                    comp = comp,
+                                                    distance = dist,
+                                                    priority = priority
+                                                })
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+ 
+                            table.sort(targets, function(a, b)
+                                if a.priority ~= b.priority then
+                                    return a.priority < b.priority
+                                end
+                                return a.distance < b.distance
+                            end)
+ 
+                            for i = 1, #targets do
+                                local t = targets[i]
+                                local ways = {}
+                                local seen = {}
+ 
+                                local ok_ways, possible = pcall(function()
+                                    return interact_misc.get_all_possible_active_ways(t.entity_no)
+                                end)
+ 
+                                if ok_ways and possible then
+                                    for _, w in ipairs(possible) do
+                                        if not seen[w] then
+                                            seen[w] = true
+                                            table.insert(ways, w)
+                                        end
+                                    end
+                                end
+ 
+                                local comp_id = nil
+                                if t.comp.components then
+                                    for cid, comp_data in pairs(t.comp.components) do
+                                        comp_id = cid
+ 
+                                        if comp_data.status_no and not seen[comp_data.status_no] then
+                                            seen[comp_data.status_no] = true
+                                            table.insert(ways, comp_data.status_no)
+                                        end
+ 
+                                        if comp_data.config_no and not seen[comp_data.config_no] then
+                                            seen[comp_data.config_no] = true
+                                            table.insert(ways, comp_data.config_no)
+                                        end
+                                    end
+                                end
+ 
+                                if #ways > 0 then
+                                    pcall(function()
+                                        mp:set_interact_target_id(t.entity_id)
+                                    end)
+ 
+                                    for _, way in ipairs(ways) do
+                                        pcall(function()
+                                            mp:trigger_active_interact(
+                                                way,
+                                                t.entity_id,
+                                                nil,
+                                                nil,
+                                                comp_id
+                                            )
+                                        end)
+                                    end
+ 
+                                        pcall(function()
+                                        mp:trigger_active_interact()
+                                    end)
+                                end
+                            end
                         end)
-                    end
-                    
-                    pcall(function() mp:trigger_active_interact() end)
-                end
+                    })
+                )
+ 
+                scene:runAction(auto_collect_action)
+            else
+                write_debug("[AutoLootLoop] No running scene, will attach on next toggle")
             end
-        end, 2.0, false) -- Run every 2 seconds
-        write_debug("[AutoLootLoop] [✔] Auto Collect Loop enabled (2s interval)")
-    else
-        -- Stop auto collect loop
-        if auto_collect_timer then
-            cc.Director:getInstance():getScheduler():unscheduleScriptEntry(auto_collect_timer)
-            auto_collect_timer = nil
         end
-        write_debug("[AutoLootLoop] [✔] Auto Collect Loop disabled")
+    else
+        btn_autolootloop:setTitleText("Auto Loot Loop: OFF")
+        btn_autolootloop:setTitleColor(cc.c3b(255, 0, 0))
     end
-    
+ 
     return _G.AUTO_COLLECT_ENABLED
 end
  
@@ -1765,7 +1846,7 @@ keybindInfo = ccui.Button:create()
 write_debug("[DEBUG] Keybind info button created directly")
  
 write_debug("[DEBUG] Setting keybind info button properties...")
-pcall(function() keybindInfo:setTitleText("   Click to open menu or drag to move") end)
+pcall(function() keybindInfo:setTitleText("�� Click to open menu or drag to move") end)
 pcall(function() keybindInfo:setTitleFontSize(25) end)
 pcall(function() keybindInfo:setTitleColor(cc.c3b(200, 200, 255)) end)  -- Light blue color
 pcall(function() keybindInfo:setScale9Enabled(true) end)
@@ -1805,8 +1886,8 @@ if DEBUG_FILE_ENABLED then
             final_file:write(os.date("%H:%M:%S") .. " === SCRIPT COMPLETED SUCCESSFULLY ===\n")
             final_file:write(os.date("%H:%M:%S") .. " Menu should now be visible!\n")
             final_file:write(os.date("%H:%M:%S") .. " All 24+ buttons are functional and ready to use.\n")
-            final_file:write(os.date("%H:%M:%S") .. " Combat Menu and Weapon Skin buttons have been hidden.\n")
-            final_file:write(os.date("%H:%M:%S") .. " AutoLoot has been fixed with working 4-method system!\n")
+            final_file:write(os.date("%H:%M:%S") .. " Combat Menu and Weapon Skin Removed Not Working.\n")
+            final_file:write(os.date("%H:%M:%S") .. " AutoLoot has been loaded using 4 Method\n")
             final_file:close()
         end)
         if not final_write_success then
